@@ -1,14 +1,14 @@
 namespace :aws_stack do
   desc 'Deploy application using cloudformation'
-  task :vpc_create, [:environment, :aws_profile] do |t, args|
-    exit_on_mandatory_rake_arguments args, :environment, :aws_profile
-    template_file_path = "cf_template.rb"
+  task :vpc_create, [:environment, :aws_profile, :region] do |t, args|
+    exit_on_mandatory_rake_arguments args, :environment, :aws_profile, :region
+    template_file_path = "cloudformation.rb"
     abort "Error! CloudFormation template missing" if not File.exists?(template_file_path)
     extra_parameters = {}
     stack_creation_params = {
       environment: args[:environment],
       aws_profile: args[:aws_profile],
-      region: deploy_variables['region'],
+      region: args[:region],
       template_filepath: template_file_path,
       extra_parameters: extra_parameters,
       deploy_variables: deploy_variables

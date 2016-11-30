@@ -89,7 +89,7 @@ class CloudFormation
     waiter_name = :stack_update_complete if operation == "UPDATE"
       begin
         @cloud_formation_client.wait_until(waiter_name, stack_name: stack_name) do |w|
-          w.interval = 10
+          w.interval = 20
           w.max_attempts = 180
           w.before_wait do |n, resp|
             response = @cloud_formation_client.describe_stacks({stack_name:stack_name})
