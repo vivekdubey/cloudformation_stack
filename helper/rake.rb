@@ -12,6 +12,6 @@ def exit_on_mandatory_rake_arguments args, *arguments
 end
 
 def deploy_variables
-  abort "Error! CloudFormation template missing" if not File.exists?("variables.json")
+  abort "Error! variables.json file missing" if not File.exists?("variables.json")
   @deploy_variables ||=JSON.load(File.read("variables.json"))
 end
