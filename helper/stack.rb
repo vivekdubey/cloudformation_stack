@@ -1,7 +1,6 @@
-def create_aws_stack_service(stack_creation_params)
-  aws_config = AWSConfig.new(stack_creation_params[:aws_profile], stack_creation_params[:region])
-  cloudformation = CloudFormation.new stack_creation_params[:environment], aws_config
-  AWSStackService.new(stack_creation_params.merge({cloudformation: cloudformation}))
+def create_aws_stack_service(stack_name, template_body, template_params, credentials)
+  cf_client = CloudFormation.new(stack_name, template_body, template_params, credentials)
+  AWSStackService.new(stack_name, template_body, template_params, cf_client)
 end
 
 def check_stack_or_abort! aws_stack_service
