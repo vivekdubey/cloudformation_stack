@@ -8,6 +8,24 @@ class CloudFormation
     @template_body = template_body
     @template_params = template_params
     @cf_client = cf_client(credentials[:aws_profile], credentials[:region])
+    @stack = Aws::CloudFormation::Stack.new(stack_name,{client: @cf_client})
+  end
+
+  def stack_status
+    @stack.stack_status
+  end
+
+  def events
+    @stack.events.map do |event|
+      {
+        time: event.timestamp,
+        status: event.resource_status,
+        type: event.resource_type,
+        logical_id: event.logical_resource_id,
+        physical_id: event.physical_resource_id,
+        reason: event.resource_status_reason
+      }
+    end
   end
 
   def create_stack(stack_name, stack_paramters, disable_rollback, template_body)
