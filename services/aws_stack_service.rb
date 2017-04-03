@@ -1,6 +1,5 @@
 require 'json'
 require 'cfndsl'
-require_relative '../lib/cloudformation_stack/cloudformation'
 
 class AWSStackService
   attr_reader :stack_name, :template_params, :template_body
