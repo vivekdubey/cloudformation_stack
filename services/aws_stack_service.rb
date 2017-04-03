@@ -1,11 +1,11 @@
 require 'json'
 require 'cfndsl'
 
-class AWSStackService
+class CFStackService
   attr_reader :stack_name, :template_params, :template_body
   def initialize(stack_name, template_body, template_params, credentials)
     @stack_name = stack_name
-    @cf_client = cf_client(stack_name, template_body, template_params, credentials)
+    @cf = cf_client(stack_name, template_body, template_params, credentials)
     @template_body = template_body
     @template_params = template_params
   end
@@ -22,27 +22,23 @@ class AWSStackService
   end
 
   def exists?
-    @cf_client.stack_exists?(stack_name)
+    @cf.stack_exists?
   end
 
   def create disable_rollback
-    stack = @cf_client.create_stack stack_name, template_params, disable_rollback, template_body
+    stack = @cf.create_stack disable_rollback
     raise Aws::Waiters::Errors::FailureStateError, stack.stack_status unless stack.stack_status == 'CREATE_COMPLETE'
     stack
   end
 
   def update
-    stack = @cf_client.update_stack stack_name, template_params, template_body
+    stack = @cf.update_stack
     raise Aws::Waiters::Errors::FailureStateError, stack.stack_status unless stack.stack_status == 'UPDATE_COMPLETE'
     stack
   end
 
-  def delete wait_for_operation_completion
-    @cf_client.delete_stack stack_name, wait_for_operation_completion
-  end
-
   def stack_status
-    @cf_client.get_stack(stack_name).stack_status
+    @cf.stack_status
   end
 
   def is_valid_status?

@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.email       = 'vatsa.vivek@gmail.com'
   s.files       = ["lib/cloudformation_stack.rb"]
   s.add_runtime_dependency 'cfndsl', '0.3.2'
-  s.add_runtime_dependency 'aws-sdk', '2.1.32'
+  s.add_runtime_dependency 'aws-sdk', '2.8.14'
   s.add_runtime_dependency 'rake', '10.4.2'
   s.add_runtime_dependency 'bundler', '> 1.10.6'
 end
