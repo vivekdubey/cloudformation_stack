@@ -10,14 +10,14 @@ class CFStackService
     @template_params = template_params
   end
 
-  def deploy
+  def deploy(disable_rollback=false)
     if exists?
-      abort "CFN Stack blocked (status = #{stack_status})" unless is_valid_status?
-      Log.info "CFN Stack pre-existing, updating it..."
+      Log.error "Cloudformation stack can't be deployed\n:Stack Name:  #{stack_name}\n Stack status: #{stack_status}" unless is_valid_status?
+      Log.info "Updating cloudformation stack...\n Stack Name: #{stack_name}"
       catch_stack_validation_error { update }
     else
-      Log.info "CFN Stack inexistent, creating it..."
-      catch_stack_validation_error { create true }
+      Log.info "Creating cloudformation stack...\n Stack Name: #{stack_name}"
+      catch_stack_validation_error { create disable_rollback }
     end
   end
 
