@@ -43,7 +43,6 @@ class CloudFormation
       result = catch(:success) do
         waiter(stack_name, Constants::END_STATES, "CREATE")
       end
-      Log.info result unless result.nil?
       return @stack
     end
   end
@@ -61,7 +60,6 @@ class CloudFormation
       result = catch(:success) do
         waiter(stack_name, Constants::END_STATES, "UPDATE")
       end
-      Log.info result unless result.nil?
       return @stack
     end
   end
