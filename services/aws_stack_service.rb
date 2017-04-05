@@ -14,10 +14,10 @@ class CFStackService
     if exists?
       Log.error "Cloudformation stack can't be deployed\n:Stack Name:  #{stack_name}\n Stack status: #{stack_status}" unless is_valid_status?
       Log.info "Updating cloudformation stack...\n Stack Name: #{stack_name}"
-      catch_stack_validation_error { update }
+      exception_handler { update }
     else
       Log.info "Creating cloudformation stack...\n Stack Name: #{stack_name}"
-      catch_stack_validation_error { create disable_rollback }
+      exception_handler { create disable_rollback }
     end
   end
 
@@ -49,10 +49,9 @@ class CFStackService
   def cf_client(stack_name, template_body, template_params, credentials)
     CloudFormation.new(stack_name, template_body, template_params, credentials)
   end
-  def catch_stack_validation_error
+  def exception_handler
     begin
       stack = yield
-      write_log stack.events
     rescue Aws::CloudFormation::Errors::ValidationError, Aws::Waiters::Errors::FailureStateError, Aws::CloudFormation::Errors::InvalidStatus => e
       if e.instance_of? Aws::Waiters::Errors::FailureStateError
         Log.error_and_continue "#{e.response}"
@@ -66,12 +65,4 @@ class CFStackService
       exit 1 unless e.class.name ==  'Aws::CloudFormation::Errors::ValidationError' && e.message == "No updates are to be performed."
     end
   end
-
-  def write_log events
-    build_log_folder = 'cloud_formation_logs'
-    FileUtils.rm_rf build_log_folder
-    Dir.mkdir build_log_folder
-    File.write File.join(build_log_folder,"events.log"), events.to_json
-  end
-
 end
