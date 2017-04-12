@@ -11,7 +11,8 @@ class CloudFormation
   end
 
   def stack_status
-    @stack.stack_status
+    response = @cf.describe_stacks({stack_name:stack_name})
+    response.stacks[0].stack_status
   end
 
   def events
@@ -43,7 +44,6 @@ class CloudFormation
       result = catch(:success) do
         waiter(stack_name, Constants::END_STATES, "CREATE")
       end
-      return @stack
     end
   end
 
@@ -57,10 +57,9 @@ class CloudFormation
         capabilities: ["CAPABILITY_IAM"],
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
       })
-      result = catch(:success) do
+      catch(:success) do
         waiter(stack_name, Constants::END_STATES, "UPDATE")
       end
-      return @stack
     end
   end
 
@@ -86,7 +85,7 @@ class CloudFormation
           w.before_wait do |n, resp|
             response = @cf.describe_stacks({stack_name:stack_name})
             if response.stacks.empty? || applicable_end_states.include?(response.stacks[0].stack_status)
-              throw :success, "#{operation} operation on stack #{stack_name} completed with #{response.stacks[0].stack_status}."
+              throw :success, response.stacks[0].stack_status
             end
             Log.info " #{operation} operation on stack #{stack_name} current status : #{response.stacks[0].stack_status}."
           end
