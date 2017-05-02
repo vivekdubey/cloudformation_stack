@@ -10,14 +10,14 @@ class CFStackService
     @template_params = template_params
   end
 
-  def deploy(disable_rollback=false)
+  def deploy(disable_rollback=false,timeout=3600)
     if exists?
       Log.error "Cloudformation stack can't be deployed\n:Stack Name:  #{stack_name}\n Stack status: #{stack_status}" unless is_valid_status?
       Log.info "Updating cloudformation stack...\nStack Name: #{stack_name}"
-      exception_handler { update }
+      exception_handler { update(timeout) }
     else
       Log.info "Creating cloudformation stack...\nStack Name: #{stack_name}"
-      exception_handler { create disable_rollback }
+      exception_handler { create(disable_rollback,timeout) }
     end
   end
 
@@ -25,20 +25,22 @@ class CFStackService
     @cf_client.stack_exists?
   end
 
-  def create disable_rollback
-    @cf_client.create_stack disable_rollback
+  def create(disable_rollback,timeout)
+    @cf_client.create_stack(disable_rollback,timeout)
     if stack_status == 'CREATE_COMPLETE'
       Log.success "******* #{stack_name} created successfully. *******"
     else
+      @cf_client.delete_stack
       raise Aws::Waiters::Errors::FailureStateError, stack_status
     end
   end
 
-  def update
-    @cf_client.update_stack
+  def update(timeout)
+    @cf_client.update_stack(timeout)
     if stack_status == 'UPDATE_COMPLETE'
       Log.success "******* #{stack_name} updated successfully. *******"
     else
+      @cf_client.cancel_update_stack
       raise Aws::Waiters::Errors::FailureStateError, stack_status
     end
   end

@@ -28,7 +28,15 @@ class CloudFormation
     end
   end
 
-  def create_stack(disable_rollback)
+  def cancel_update_stack
+    @cf.cancel_update_stack({stack_name: stack_name})
+  end
+
+  def delete_stack
+    @cf.delete_stack({stack_name: stack_name})
+  end
+
+  def create_stack(disable_rollback,timeout)
     Log.error "Stack #{stack_name} already exists and cannot be created." if stack_exists?
     Log.info("Creating stack #{stack_name} with parameters:")
     pp template_params
@@ -42,12 +50,12 @@ class CloudFormation
         timeout_in_minutes: 30
       })
       result = catch(:success) do
-        waiter(stack_name, Constants::END_STATES, "CREATE")
+        waiter(stack_name, Constants::END_STATES, "CREATE", timeout)
       end
     end
   end
 
-  def update_stack
+  def update_stack(timeout)
     Log.info("Updating stack #{stack_name} with parameters:")
     pp template_params
     Dir.mktmpdir do |template_dir|
@@ -58,7 +66,7 @@ class CloudFormation
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
       })
       catch(:success) do
-        waiter(stack_name, Constants::END_STATES, "UPDATE")
+        waiter(stack_name, Constants::END_STATES, "UPDATE", timeout)
       end
     end
   end
@@ -75,19 +83,19 @@ class CloudFormation
     Aws::CloudFormation::Client.new(credentials: credentials, region: region)
   end
 
-  def waiter(stack_name, applicable_end_states, operation)
+  def waiter(stack_name, applicable_end_states, operation, timeout)
     waiter_name = :stack_create_complete if operation == "CREATE"
     waiter_name = :stack_update_complete if operation == "UPDATE"
       begin
         @cf.wait_until(waiter_name, stack_name: stack_name) do |w|
-          w.interval = 20
-          w.max_attempts = 180
+          w.interval = Constants::WAITER_INTERVAL.to_i
+          w.max_attempts = (timeout / w.interval).to_i
           w.before_wait do |n, resp|
             response = @cf.describe_stacks({stack_name:stack_name})
             if response.stacks.empty? || applicable_end_states.include?(response.stacks[0].stack_status)
               throw :success, response.stacks[0].stack_status
             end
-            Log.info " #{operation} operation on stack #{stack_name} current status : #{response.stacks[0].stack_status}."
+            Log.info "Attempt: #{n} #{operation} operation on stack #{stack_name} current status : #{response.stacks[0].stack_status}."
           end
         end
       rescue Exception => e

@@ -10,4 +10,5 @@ module Constants
   BLUE_COLOR = "\033[34m"
   PURPLE_COLOUR = "\033[01;35m"
   YELLOW_COLOR = "\033[0;33m"
+  WAITER_INTERVAL = 20 # in seconds
 end
