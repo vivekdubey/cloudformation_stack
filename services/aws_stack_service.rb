@@ -30,7 +30,7 @@ class CFStackService
     if stack_status == 'CREATE_COMPLETE'
       Log.success "******* #{stack_name} created successfully. *******"
     else
-      @cf_client.delete_stack
+      @cf_client.delete_stack unless disable_rollback
       raise Aws::Waiters::Errors::FailureStateError, stack_status
     end
   end
