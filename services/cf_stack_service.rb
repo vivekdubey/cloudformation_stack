@@ -3,9 +3,9 @@ require 'cfndsl'
 
 class CFStackService
   attr_reader :stack_name, :template_params, :template_body
-  def initialize(stack_name, template_body, template_params, credentials)
+  def initialize(stack_name, template_body, template_params, credentials, region)
     @stack_name = stack_name
-    @cf_client = cf_client(stack_name, template_body, template_params, credentials)
+    @cf_client = cf_client(stack_name, template_body, template_params, credentials, region)
     @template_body = template_body
     @template_params = template_params
   end
@@ -54,8 +54,8 @@ class CFStackService
   end
 
   private
-  def cf_client(stack_name, template_body, template_params, credentials)
-    CloudFormation.new(stack_name, template_body, template_params, credentials)
+  def cf_client(stack_name, template_body, template_params, credentials, region)
+    CloudFormation.new(stack_name, template_body, template_params, credentials, region)
   end
   def exception_handler
     begin

@@ -2,11 +2,11 @@ require 'aws-sdk'
 require 'pp'
 class CloudFormation
   attr_reader :stack_name, :template_body, :template_params
-  def initialize(stack_name, template_body, template_params, credentials)
+  def initialize(stack_name, template_body, template_params, credentials, region)
     @stack_name = stack_name
     @template_body = template_body
     @template_params = template_params
-    @cf = cf_client(credentials[:aws_profile], credentials[:region])
+    @cf = Aws::CloudFormation::Client.new(credentials: Credentials.get(credentials, region), region: region)
     @stack = Aws::CloudFormation::Stack.new(stack_name,{client: @cf})
   end
 
@@ -77,11 +77,6 @@ class CloudFormation
   end
 
   private
-
-  def cf_client(aws_profile, region)
-    credentials = Aws::SharedCredentials.new(profile_name: aws_profile).credentials
-    Aws::CloudFormation::Client.new(credentials: credentials, region: region)
-  end
 
   def waiter(stack_name, applicable_end_states, operation, timeout)
     waiter_name = :stack_create_complete if operation == "CREATE"
