@@ -78,6 +78,35 @@ credential_params = {
       session_token: 'SAMPLESESSIONTOKEN',  
     }
 ```
+## How to use the gem? ##
+```
+require 'cloudformation_stack'                                       # Using gem
+
+cf_template_parameters = {                                           # CF template Parameters.
+  Param1: 'Param1 Value',
+  Param2: 'Param2 Value',
+  .
+  .
+  ParamN: 'ParamN Value'
+}
+cf_stack_name = <Cloudformation stack name>                          # CF stack name.
+cf_template_body = File.read('<Template path>/sample_cf.template') . # Cloudformation template.  
+credential_params = {                                                # Credentials parameters as per instructions given above.
+  mode: 'aws_profile | iam_role_arn | aws_access_key',
+  profile_name: 'profile name',
+  iam_role_arn: 'iam_role_arn',
+  access_key_id: 'access_key_id | ENV['AWS_ACCESS_KEY_ID']',
+  secret_access_key: 'secret_access_key | ENV['AWS_SECRET_ACCESS_KEY']',
+  session_token: 'session_token | ENV['AWS_SESSION_TOKEN'] (optional. Needed if profile is federated access)'
+}
+disable_rollback = <true | false>                                     # True: Don't rollback, False: Rollback
+timeout = N <seconds>                                                 # Timeout when creation/updation stops.
+region = <AWS region>                                                 # AWS region where stack needs to be.
+
+# Deployment steps. Invoking classes and functions from the gem
+cf_stack = CFStackService.new(cf_stack_name, cf_template_body, cf_template_parameters, credential_params, region)
+cf_stack.deploy(disable_rollback,timeout)
+```
 ## [Examples](https://github.com/vivekdubey/cloudformation_stack/tree/v4/examples) explained ##
 - Examples can be referred to use the gem as per ones comfort.
 - Examples in the repository use rake task to invoke.
