@@ -17,6 +17,31 @@ It's a rubygem written to create/update cloudformation stack. It creates the sta
 - AWS profile based authentication.
 - Access key based authentication
 
+## Parameters needed to use the gem ##
+### Cloudformation template ###
+- JSON or YAML format
+### Values for Parameters declared in cloudformation template ###
+- Snippet from examples in the repository
+```
+   cf_template_parameters = {
+      ImageId: 'ami-abc123d',
+      InstanceType: 't2.nano',
+      KeyName: 'test-key'
+    }
+```
+### Stack Name ###
+- Unique Stack name for the undergoing cloudformation deployment.
+### Disable rollback flag ###
+- set to `true` if stack should stay if creation failed.
+- set to `false` if stack should get deleted if creation failed.
+### Timeout ###
+- timeout in seconds.
+- default value: `600 seconds`.
+- If stack creation/updation doesn't fail/complete within specified time, aws-sdk sends failed signal to cloudformation and makes it rollback.
+### Credential/Authentication Parameters ###
+#### IAM role based authencation ####
+#### AWS profile based authentication ####
+#### Access key based authentication ####
 ## Examples ##
-
+Examples demonstrating usage of different authentication 
 
