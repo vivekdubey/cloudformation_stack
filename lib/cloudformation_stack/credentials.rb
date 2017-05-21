@@ -5,11 +5,11 @@
     iam_role_arn: 'iam_role_arn',
     access_key_id: 'access_key_id | ENV['AWS_ACCESS_KEY_ID']',
     secret_access_key: 'secret_access_key | ENV['AWS_SECRET_ACCESS_KEY']',
-    session_token: 'session_token | ENV['AWS_SESSION_TOKEN']'
+    session_token: 'session_token | ENV['AWS_SESSION_TOKEN'] (optional. Needed if profile is federated access)'
   }
 =end
 require 'securerandom'
-
+require 'pp'
 class Credentials
   class << self
     def get(params,region)
@@ -31,12 +31,25 @@ class Credentials
           )
         end
       else
-        Log.error "Invalid credentials params"
+        Log.error_and_continue "Invalid credentials params"
+        Log.error_and_continue "Expected value in format given below"
+        usage
       end
     end
 
     private
-
+    def usage
+      creds_params = {
+        mode: 'aws_profile | iam_role_arn | aws_access_key',
+        profile_name: 'profile name',
+        iam_role_arn: 'iam_role_arn',
+        access_key_id: 'access_key_id | ENV[\'AWS_ACCESS_KEY_ID\']',
+        secret_access_key: 'secret_access_key | ENV[\'AWS_SECRET_ACCESS_KEY\']',
+        session_token: 'session_token | ENV[\'AWS_SESSION_TOKEN\'] (optional. Needed if profile is federated access)'
+      }
+      pp creds_params
+      exit 1
+    end
     def valid_params?(params)
       case params[:mode]
       when 'aws_profile'
@@ -53,3 +66,4 @@ class Credentials
     end
   end
 end
+Credentials.usage
