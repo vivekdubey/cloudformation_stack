@@ -22,16 +22,16 @@ namespace :example do
 
   desc 'Deploying a cloudformation template with params using IAM role as authentication method'
   task :deploy_with_iam_role, [:iam_role_arn, :region, :keyname, :instance_type, :image_id, :timeout] do |t, args|
-    cloudformation_parameters = {
+    cf_template_parameters = {
       ImageId: args[:image_id],
       InstanceType: args[:instance_type],
       KeyName: args[:keyname]
     }
     cf_stack_name = "sample-stack"
-    cf_template_body = JSON.load('sample_cf.template')
+    cf_template_body = File.read('sample_cf.template')
     credential_params = {
       mode: 'iam_role_arn',
-      profile_name: args[:iam_role_arn]
+      iam_role_arn: args[:iam_role_arn]
     }
     cf_stack = CFStackService.new(cf_stack_name, cf_template_body, cf_template_parameters, credential_params, args[:region])
     cf_stack.deploy(disable_rollback,args[:timeout])
