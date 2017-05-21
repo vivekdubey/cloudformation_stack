@@ -40,8 +40,31 @@ It's a rubygem written to create/update cloudformation stack. It creates the sta
 - If stack creation/updation doesn't fail/complete within specified time, aws-sdk sends failed signal to cloudformation and makes it rollback.
 ### Credential/Authentication Parameters ###
 #### IAM role based authencation ####
+- It uses IAM role to authenticate with AWS API.
+- It can be invoked from an EC2 instance assigned an IAM role.
+- It needs the role to assume in order to create/update cloudformation in the desired account. 
+- Credentials params for IAM role based authentication(assumed role) has to be passed as given below:
+##### Credential parameter format for IAM based authentication #####
+```
+credential_params = {
+      mode: 'iam_role_arn', # Mandatory parameter.
+      iam_role_arn: 'arn:aws:iam::12345678:role/exampleRole' # Mandatory if mode == iam_role_arn
+    }
+```
 #### AWS profile based authentication ####
+- It uses aws profile configured for running awscli commands.
+- It can be used to authenticate AWS SDK to invoke AWS APIs.
+##### Credential parameter format for AWS Profile based authentication #####
+```
+credential_params = {
+      mode: 'aws_profile', # Mandatory parameter.
+      profile_name: 'example_aws_profile' # Mandatory if mode == aws_profile
+    }
+```
 #### Access key based authentication ####
+- It's the most basic authentication method.
+- In order to use this way, either values need to be passed explicitlty or certain environment variables need to be set.
+
 ## Examples ##
 Examples demonstrating usage of different authentication 
 
