@@ -64,7 +64,101 @@ credential_params = {
 #### Access key based authentication ####
 - It's the most basic authentication method.
 - In order to use this way, either values need to be passed explicitlty or certain environment variables need to be set.
+- `access_key_id` isn't needed if `ENV['AWS_ACCESS_KEY_ID']` is set.
+- `secret_access_key` isn't needed if `ENV['AWS_SECRET_ACCESS_KEY'],` is set.
+- `session_token` isn't needed if `ENV['AWS_SESSION_TOKEN']` is set. 
 
-## Examples ##
-Examples demonstrating usage of different authentication 
+*Note: `session_token` is needed only when access key is for federate access*
+##### Credential parameter format for Access key based authentication #####
+```
+credential_params = {
+      mode: 'aws_access_key', # Mandatory parameter.
+      access_key_id: 'SAMPLEACCESSKEYID', # Mandatory if mode == aws_access_key
+      secret_access_key: 'SAMPLESECRETACCESSKEY', 
+      session_token: 'SAMPLESESSIONTOKEN',  
+    }
+```
+## [Examples](https://github.com/vivekdubey/cloudformation_stack/tree/v4/examples) explained ##
+- Examples can be referred to use the gem as per ones comfort.
+- Examples in the repository use rake task to invoke.
+- Gem can invoked differently as well. 
+- Sample cloudformation template can be found inside examples directory with relevant rake tasks.
 
+### Case1 : IAM role based authentication ###
+```
+# iam_role_arn : Assumed IAM role ARN.
+# region : AWS region where cloudformation stack is deployed to.
+# keyname, instance_type, image_id :  map to corresponding parameters in cloudformation template.
+# timeout : Timeout in seconds, after which cloudformation deployment will rollback.
+task :deploy_with_iam_role, [:iam_role_arn, :region, :keyname, :instance_type, :image_id, :timeout] do |t, args|
+    cf_template_parameters = {
+      ImageId: args[:image_id],                         # ImageId      : Parameter defined in CF template.
+      InstanceType: args[:instance_type],               # InstanceType : Parameter defined in CF template.
+      KeyName: args[:keyname]                           # KeyName      : Parameter defined in CF template.
+    }
+    cf_stack_name = "sample-stack"                      # Name of cloudformation stack
+    cf_template_body = File.read('sample_cf.template')  # Cloudformation template.
+    credential_params = {                               # Credentials parameter defined as per authentication mode.
+      mode: 'iam_role_arn',
+      iam_role_arn: args[:iam_role_arn]
+    }
+    disable_rollback = true                             # disable_rollback : true | false (To rollback in case of failure)
+    
+    # Steps to invoke gem's method to deploy AWS stack
+    cf_stack = CFStackService.new(cf_stack_name, cf_template_body, cf_template_parameters, credential_params, args[:region])
+    cf_stack.deploy(disable_rollback,args[:timeout])
+end
+```
+### Case2 : AWS profile based authentication ###
+```
+# aws_profile : AWS profile configured in ~/.aws/credentials .
+# region : AWS region where cloudformation stack is deployed to.
+# keyname, instance_type, image_id :  map to corresponding parameters in cloudformation template.
+# timeout : Timeout in seconds, after which cloudformation deployment will rollback.
+task :deploy_with_aws_profile, [:aws_profile, :region, :keyname, :instance_type, :image_id, :timeout] do |t, args|
+    cf_template_parameters = {
+      ImageId: args[:image_id],                         # ImageId      : Parameter defined in CF template.
+      InstanceType: args[:instance_type],               # InstanceType : Parameter defined in CF template.
+      KeyName: args[:keyname]                           # KeyName      : Parameter defined in CF template.
+    }
+    cf_stack_name = "sample-stack"                      # Name of cloudformation stack
+    cf_template_body = File.read('sample_cf.template')  # Cloudformation template.
+    credential_params = {                               # Credentials parameter defined as per authentication mode.
+      mode: 'aws_profile',
+      profile_name: args[:aws_profile]
+    }
+    disable_rollback = true                             # disable_rollback : true | false (To rollback in case of failure)
+    
+    # Steps to invoke gem's method to deploy AWS stack
+    cf_stack = CFStackService.new(cf_stack_name, cf_template_body, cf_template_parameters, credential_params, args[:region])
+    cf_stack.deploy(disable_rollback,args[:timeout])
+end
+```
+### Case3 : Access key based authentication ###
+```
+# access_key_id, secret_access_key, session_token : In case environment variables are not.
+# region : AWS region where cloudformation stack is deployed to.
+# keyname, instance_type, image_id :  map to corresponding parameters in cloudformation template.
+# timeout : Timeout in seconds, after which cloudformation deployment will rollback.
+task :deploy_with_access_key, [:region, :keyname, :instance_type, :image_id, :timeout, :access_key_id, :secret_access_key, :session_token] do |t, args|
+    cf_template_parameters = {
+      ImageId: args[:image_id],                         # ImageId      : Parameter defined in CF template.
+      InstanceType: args[:instance_type],               # InstanceType : Parameter defined in CF template.
+      KeyName: args[:keyname]                           # KeyName      : Parameter defined in CF template.
+    }
+    cf_stack_name = "sample-stack"                      # Name of cloudformation stack
+    cf_template_body = File.read('sample_cf.template')  # Cloudformation template.
+                                   
+    credential_params = {                               # Credentials parameter defined as per authentication mode.
+      mode: 'aws_access_key',
+      access_key_id: args[:access_key_id], # No need to pass it, if ENV['AWS_ACCESS_KEY_ID']
+      secret_access_key: args[:secret_access_key], # No need to pass it, if ENV['AWS_SECRET_ACCESS_KEY']
+      session_token: args[:session_token] # No need to pass it, if ENV['AWS_SESSION_TOKEN']
+    }
+    disable_rollback = true                             # disable_rollback : true | false (To rollback in case of failure)
+    
+    # Steps to invoke gem's method to deploy AWS stack
+    cf_stack = CFStackService.new(cf_stack_name, cf_template_body, cf_template_parameters, credential_params, args[:region])
+    cf_stack.deploy(disable_rollback,args[:timeout])
+end
+```
