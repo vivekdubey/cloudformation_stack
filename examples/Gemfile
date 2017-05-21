@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+
+gem 'rake'
+gem 'cfndsl'
+# gem 'cloudformation_stack', :git => 'https://github.com/vivekdubey/cloudformation_stack.git', branch: 'v4'
+gem 'cloudformation_stack', :path => '/home/vivek/mind/cloudformation_stack'

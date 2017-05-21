@@ -16,7 +16,7 @@ class Credentials
       if valid_params?(params)
         case params[:mode]
         when 'aws_profile'
-          Aws::SharedCredentials.new(profile_name: params[:profile_name).credentials
+          Aws::SharedCredentials.new(profile_name: params[:profile_name]).credentials
         when 'iam_role_arn'
           Aws::AssumeRoleCredentials.new(
             role_arn: params[:iam_role_arn],
@@ -26,10 +26,12 @@ class Credentials
         when 'aws_access_key'
           Aws::Credentials.new(
             params[:access_key_id] || ENV['AWS_ACCESS_KEY_ID'],
-            params[:secret_access_key].nil? || ENV['AWS_SECRET_ACCESS_KEY'],
-            params[:session_token].nil? && ENV['AWS_SESSION_TOKEN']
+            params[:secret_access_key] || ENV['AWS_SECRET_ACCESS_KEY'],
+            params[:session_token] || ENV['AWS_SESSION_TOKEN']
           )
         end
+      else
+        Log.error "Invalid credentials params"
       end
     end
 

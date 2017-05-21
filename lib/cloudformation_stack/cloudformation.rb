@@ -6,7 +6,7 @@ class CloudFormation
     @stack_name = stack_name
     @template_body = template_body
     @template_params = template_params
-    @cf = Aws::CloudFormation::Client.new(credentials: Credentials.get(credentials, region), region: region)
+    @cf = Aws::CloudFormation::Client.new(credentials: credentials, region: region)
     @stack = Aws::CloudFormation::Stack.new(stack_name,{client: @cf})
   end
 

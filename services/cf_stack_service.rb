@@ -1,5 +1,4 @@
 require 'json'
-require 'cfndsl'
 
 class CFStackService
   attr_reader :stack_name, :template_params, :template_body
@@ -14,10 +13,10 @@ class CFStackService
     if exists?
       Log.error "Cloudformation stack can't be deployed\n:Stack Name:  #{stack_name}\n Stack status: #{stack_status}" unless is_valid_status?
       Log.info "Updating cloudformation stack...\nStack Name: #{stack_name}"
-      exception_handler { update(timeout) }
+      exception_handler { update(timeout.to_i) }
     else
       Log.info "Creating cloudformation stack...\nStack Name: #{stack_name}"
-      exception_handler { create(disable_rollback,timeout) }
+      exception_handler { create(disable_rollback,timeout.to_i) }
     end
   end
 
@@ -55,7 +54,7 @@ class CFStackService
 
   private
   def cf_client(stack_name, template_body, template_params, credentials, region)
-    CloudFormation.new(stack_name, template_body, template_params, credentials, region)
+    CloudFormation.new(stack_name, template_body, template_params, Credentials.get(credentials, region), region)
   end
   def exception_handler
     begin
