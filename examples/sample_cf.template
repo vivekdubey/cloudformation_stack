@@ -38,24 +38,8 @@
             "Value" : "Sample App"
           },
           {
-            "Key" : "Schedule",
-            "Value" : "24X7"
-          },
-          {
             "Key" : "Service",
             "Value" : "Sample"
-          },
-          {
-            "Key" : "Environment",
-            "Value" : "test"
-          },
-          {
-            "Key" : "CostCentre",
-            "Value" : "5607"
-          },
-          {
-            "Key" : "OwnerDescription",
-            "Value" : "Owner=Vivek:Description=Sample Application"
           }
         ]
       }
