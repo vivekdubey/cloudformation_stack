@@ -49,7 +49,7 @@ namespace :example do
     cf_stack_name = "sample-stack"
     cf_template_body = File.read('sample_cf.template')
     credential_params = {
-      mode: 'iam_role_arn',
+      mode: 'aws_access_key',
       access_key_id: args[:access_key_id], # No need to pass it, if ENV['AWS_ACCESS_KEY_ID']
       secret_access_key: args[:secret_access_key], # No need to pass it, if ENV['AWS_SECRET_ACCESS_KEY']
       session_token: args[:session_token] # No need to pass it, if ENV['AWS_SESSION_TOKEN']

@@ -66,4 +66,3 @@ class Credentials
     end
   end
 end
-Credentials.usage
