@@ -19,6 +19,7 @@ class CFStackService
       Log.info "Creating cloudformation stack...\nStack Name: #{stack_name}"
       exception_handler { create(disable_rollback,timeout) }
     end
+    return @cf_client.outputs
   end
 
   def exists?

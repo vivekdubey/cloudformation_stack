@@ -28,6 +28,11 @@ class CloudFormation
     end
   end
 
+  def outputs
+    response = @cf.describe_stacks({stack_name:stack_name})
+    response.stacks[0].outputs
+  end
+
   def cancel_update_stack
     @cf.cancel_update_stack({stack_name: stack_name})
   end
