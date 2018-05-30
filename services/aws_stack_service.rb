@@ -3,7 +3,7 @@ require 'cfndsl'
 
 class CFStackService
   attr_reader :stack_name, :template_params, :template_body
-  def initialize(stack_name, template_body, template_params, credentials)
+  def initialize(stack_name, template_body, template_params, credentials, region="ap-southeast-2")
     @stack_name = stack_name
     @cf_client = cf_client(stack_name, template_body, template_params, credentials)
     @template_body = template_body
