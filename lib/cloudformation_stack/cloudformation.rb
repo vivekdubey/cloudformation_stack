@@ -1,102 +1,96 @@
 require 'aws-sdk'
 require 'pp'
-
 class CloudFormation
-
-  def initialize(environment, aws_config)
-    @aws_config = aws_config
-    @environment = environment
-    @cloud_formation_client = Aws::CloudFormation::Client.new(aws_config.get)
+  attr_reader :stack_name, :template_body, :template_params
+  def initialize(stack_name, template_body, template_params, credentials, region)
+    @stack_name = stack_name
+    @template_body = template_body
+    @template_params = template_params
+    @cf = Aws::CloudFormation::Client.new(credentials: credentials, region: region)
+    @stack = Aws::CloudFormation::Stack.new(stack_name,{client: @cf})
   end
 
-  def create_stack(stack_name, stack_paramters, disable_rollback, template_body)
-    Log.error "Stack #{stack_name} already exists and cannot be created." if stack_exists?(stack_name)
+  def stack_status
+    response = @cf.describe_stacks({stack_name:stack_name})
+    response.stacks[0].stack_status
+  end
+
+  def events
+    @stack.events.map do |event|
+      {
+        time: event.timestamp,
+        status: event.resource_status,
+        type: event.resource_type,
+        logical_id: event.logical_resource_id,
+        physical_id: event.physical_resource_id,
+        reason: event.resource_status_reason
+      }
+    end
+  end
+
+  def cancel_update_stack
+    @cf.cancel_update_stack({stack_name: stack_name})
+  end
+
+  def delete_stack
+    @cf.delete_stack({stack_name: stack_name})
+  end
+
+  def create_stack(disable_rollback,timeout)
+    Log.error "Stack #{stack_name} already exists and cannot be created." if stack_exists?
     Log.info("Creating stack #{stack_name} with parameters:")
-    pp stack_paramters
+    pp template_params
     Dir.mktmpdir do |template_dir|
-      @cloud_formation_client.create_stack({
+      @cf.create_stack({
         stack_name: stack_name,
         template_body: template_body,
         capabilities: ["CAPABILITY_IAM"],
-        parameters: stack_paramters.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
+        parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
         disable_rollback: disable_rollback,
         timeout_in_minutes: 30
       })
       result = catch(:success) do
-        waiter(stack_name, Constants::END_STATES, "CREATE")
+        waiter(stack_name, Constants::END_STATES, "CREATE", timeout)
       end
-      Log.info result unless result.nil?
-      return get_stack(stack_name)
     end
   end
 
-  def update_stack(stack_name, stack_paramters, template_body)
+  def update_stack(timeout)
     Log.info("Updating stack #{stack_name} with parameters:")
-    pp stack_paramters
+    pp template_params
     Dir.mktmpdir do |template_dir|
-      @cloud_formation_client.update_stack({
+      @cf.update_stack({
         stack_name: stack_name,
         template_body: template_body,
         capabilities: ["CAPABILITY_IAM"],
-        parameters: stack_paramters.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
+        parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
       })
-      result = catch(:success) do
-        waiter(stack_name, Constants::END_STATES, "UPDATE")
+      catch(:success) do
+        waiter(stack_name, Constants::END_STATES, "UPDATE", timeout)
       end
-      Log.info result unless result.nil?
-      return get_stack(stack_name)
     end
   end
 
-  def stack_exists?(stack_name)
+  def stack_exists?
     Log.info "Checking if stack #{stack_name} exists"
-    response = @cloud_formation_client.list_stacks({stack_status_filter: Constants::ALL_STATES})
-    response.stack_summaries.any?{|stack| stack.stack_name == stack_name}
-  end
-
-  def get_all_stack_names
-    response = @cloud_formation_client.list_stacks({stack_status_filter: Constants::ALL_STATES})
-    response.stack_summaries.map(&:stack_name)
-  end
-
-  def get_stack(stack_name)
-    Log.error "The stack #{stack_name} does not exist" if !stack_exists?(stack_name)
-    CFStack.new(@environment, @aws_config,Aws::CloudFormation::Stack.new(stack_name,{client: @cloud_formation_client}))
-  end
-
-  def validate_template template_body, extras={}
-    options = {
-      :template_body => template_body
-    }
-    begin
-      @cloud_formation_client.validate_template options
-      return { error: nil, valid: true }
-    rescue Exception => e
-      return { error: e, valid: false }
-    end
+    @stack.exists?
   end
 
   private
 
-  def stack_exists_and_not_in_end_state(stack_name)
-    stack_summaries = @cloud_formation_client.list_stacks({stack_status_filter: Constants::ALL_STATES}).stack_summaries
-    return false if stack_summaries.any?{|stack| stack.stack_name == stack_name && Constants::END_STATES.include?(stack.stack_status)}
-    stack_summaries.any?{|stack| stack.stack_name == stack_name}
-  end
-
-  def waiter(stack_name, applicable_end_states, operation)
+  def waiter(stack_name, applicable_end_states, operation, timeout)
     waiter_name = :stack_create_complete if operation == "CREATE"
     waiter_name = :stack_update_complete if operation == "UPDATE"
       begin
-        @cloud_formation_client.wait_until(waiter_name, stack_name: stack_name) do |w|
-          w.interval = 20
-          w.max_attempts = 180
+        @cf.wait_until(waiter_name, stack_name: stack_name) do |w|
+          w.interval = Constants::WAITER_INTERVAL.to_i
+          w.max_attempts = (timeout / w.interval).to_i
           w.before_wait do |n, resp|
-            response = @cloud_formation_client.describe_stacks({stack_name:stack_name})
+            response = @cf.describe_stacks({stack_name:stack_name})
             if response.stacks.empty? || applicable_end_states.include?(response.stacks[0].stack_status)
-              throw :success, "#{operation} operation on stack #{stack_name} completed with #{response.stacks[0].stack_status}."
+              throw :success, response.stacks[0].stack_status
             end
-            Log.info " #{operation} operation on stack #{stack_name} current status : #{response.stacks[0].stack_status}."
+            Log.info "Attempt: #{n} #{operation} operation on stack #{stack_name} current status : #{response.stacks[0].stack_status}."
           end
         end
       rescue Exception => e
