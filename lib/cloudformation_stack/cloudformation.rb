@@ -17,7 +17,7 @@ class CloudFormation
       @cloud_formation_client.create_stack({
         stack_name: stack_name,
         template_body: template_body,
-        capabilities: ["CAPABILITY_IAM"],
+        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
         parameters: stack_paramters.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
         disable_rollback: disable_rollback,
         timeout_in_minutes: 30
@@ -37,7 +37,7 @@ class CloudFormation
       @cloud_formation_client.update_stack({
         stack_name: stack_name,
         template_body: template_body,
-        capabilities: ["CAPABILITY_IAM"],
+        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
         parameters: stack_paramters.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
       })
       result = catch(:success) do
