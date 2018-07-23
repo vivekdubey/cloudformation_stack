@@ -25,23 +25,25 @@ class CFStackService
   end
 
   def create(disable_rollback,timeout)
-    @cf_client.create_stack(disable_rollback,timeout)
+    output = @cf_client.create_stack(disable_rollback,timeout)
     if stack_status == 'CREATE_COMPLETE'
       Log.success "******* #{stack_name} created successfully. *******"
     else
       @cf_client.delete_stack unless disable_rollback
       raise Aws::Waiters::Errors::FailureStateError, stack_status
     end
+    return output
   end
 
   def update(timeout)
-    @cf_client.update_stack(timeout)
+    output = @cf_client.update_stack(timeout)
     if stack_status == 'UPDATE_COMPLETE'
       Log.success "******* #{stack_name} updated successfully. *******"
     else
       @cf_client.cancel_update_stack
       raise Aws::Waiters::Errors::FailureStateError, stack_status
     end
+    return output
   end
 
   def stack_status
