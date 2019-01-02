@@ -47,7 +47,10 @@ class CloudFormation
         capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
         disable_rollback: disable_rollback,
-        timeout_in_minutes: 30
+        timeout_in_minutes: 30,
+        tags: [
+          { key: "StackName", value: stack_name},
+        ]
       })
       result = catch(:success) do
         waiter(stack_name, Constants::END_STATES, "CREATE", timeout)
@@ -64,6 +67,9 @@ class CloudFormation
         template_body: template_body,
         capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
+        tags: [
+          { key: "StackName", value: stack_name},
+        ]
       })
       catch(:success) do
         waiter(stack_name, Constants::END_STATES, "UPDATE", timeout)
