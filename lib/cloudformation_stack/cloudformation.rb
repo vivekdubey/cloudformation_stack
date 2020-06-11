@@ -36,7 +36,7 @@ class CloudFormation
     @cf.delete_stack({stack_name: stack_name})
   end
 
-  def create_stack(disable_rollback,timeout)
+  def create_stack(disable_rollback,timeout,tags)
     Log.error "Stack #{stack_name} already exists and cannot be created." if stack_exists?
     Log.info("Creating stack #{stack_name} with parameters:")
     pp template_params
@@ -44,13 +44,13 @@ class CloudFormation
       @cf.create_stack({
         stack_name: stack_name,
         template_body: template_body,
-        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
+        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM", "CAPABILITY_AUTO_EXPAND" ],
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
         disable_rollback: disable_rollback,
         timeout_in_minutes: 30,
         tags: [
           { key: "StackName", value: stack_name},
-        ]
+        ].concat(tags)
       })
       result = catch(:success) do
         waiter(stack_name, Constants::END_STATES, "CREATE", timeout)
@@ -58,18 +58,18 @@ class CloudFormation
     end
   end
 
-  def update_stack(timeout)
+  def update_stack(timeout,tags)
     Log.info("Updating stack #{stack_name} with parameters:")
     pp template_params
     Dir.mktmpdir do |template_dir|
       @cf.update_stack({
         stack_name: stack_name,
         template_body: template_body,
-        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM" ],
+        capabilities: [ "CAPABILITY_IAM", "CAPABILITY_NAMED_IAM", "CAPABILITY_AUTO_EXPAND" ],
         parameters: template_params.map{|key, value| {parameter_key: key.to_s, parameter_value: value.to_s, use_previous_value: false}},
         tags: [
           { key: "StackName", value: stack_name},
-        ]
+        ].concat(tags)
       })
       catch(:success) do
         waiter(stack_name, Constants::END_STATES, "UPDATE", timeout)
